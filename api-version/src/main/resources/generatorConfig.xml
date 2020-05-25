@@ -16,9 +16,9 @@
 
         <!--测试环境,查找keys:dev-->
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://10.35.104.126:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=utf-8"
-                        userId="DHCloud"
-                        password="Dahuacloud#1">
+                        connectionURL="jdbc:mysql://127.0.0.1:3306/test?allowMultiQueries=true&amp;useUnicode=true&amp;characterEncoding=utf-8"
+                        userId="root"
+                        password="123456">
         </jdbcConnection>
 
 
