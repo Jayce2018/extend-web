@@ -29,6 +29,7 @@ public class Business1008600 {
             book.setAuthor(requestDTO.getAuthor());
             book.setCreateTime(new Date());
             count = bookMapper.insertSelective(book);
+            throw new Exception("error");
         }else{
             //update
             Book bookU = new Book();
@@ -39,12 +40,12 @@ public class Business1008600 {
             count = bookMapper.updateByPrimaryKeySelective(bookU);
             throw new Exception("测试回滚");
         }
-        ReturnDTO returnDTO=new ReturnDTO();
+        /*ReturnDTO returnDTO=new ReturnDTO();
         returnDTO.setCode(200);
         returnDTO.setMessage("success");
         returnDTO.setResult(count);
 
-        return (JSONObject) JSONObject.toJSON(returnDTO);
+        return (JSONObject) JSONObject.toJSON(returnDTO);*/
     }
 
     @ResponseBody
