@@ -12,9 +12,11 @@ import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.MapContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.lang.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.DispatcherServlet;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletRequest;
@@ -98,6 +100,18 @@ public class VersionDispatcherServlet extends DispatcherServlet {
     }
 
     /**
+     * Do we need view name translation?
+     */
+    private void applyDefaultViewName(HttpServletRequest request, @Nullable ModelAndView mv) throws Exception {
+        if (mv != null && !mv.hasView()) {
+            String defaultViewName = getDefaultViewName(request);
+            if (defaultViewName != null) {
+                mv.setViewName(defaultViewName);
+            }
+        }
+    }
+
+    /**
      * field Auto wired
      */
     private void fieldAutoLoad(Object instance) throws IllegalAccessException, InstantiationException {
@@ -129,45 +143,42 @@ public class VersionDispatcherServlet extends DispatcherServlet {
             return methodBar.invoke(instance, JSONObject.parseObject((String) string, methodBar.getParameterTypes()[0]));
         } else if (httpMethod.equals(HttpMethod.GET)) {
             //代码参数map<pram注解，参数类型>
-            Map<RequestParam, Class> methodMap = new LinkedHashMap<>();
+            Map<Object, Class> methodMap = new LinkedHashMap<>();
             Parameter[] parameters = methodBar.getParameters();
             for (Parameter param : parameters) {
-                if (null == param.getAnnotation(RequestParam.class)) {
-                    throw new Exception("Pram参数型请求，请加RequestParam注解");
+                if(null!=param.getAnnotation(RequestParam.class)) {
+                    methodMap.put(param.getAnnotation(RequestParam.class), param.getType());
                 }
-                methodMap.put(param.getAnnotation(RequestParam.class), param.getType());
+                if(0==param.getAnnotations().length) {
+                    methodMap.put(request, param.getType());
+                }
             }
             //请求参数map<参数名，参数值>
             Map<String, String[]> requestParameterMap = request.getParameterMap();
+            Set<Object> keySet = methodMap.keySet();
 
-
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("instance", instance);
-            String params = "";
-            Set<RequestParam> keySet = methodMap.keySet();
-
-            //组装调用代码参数
+            //实际参数
+            Object[] arrays = new Object[parameters.length];
             int i = 0;
-            for (RequestParam pram : keySet) {
-                String[] strings = requestParameterMap.get(pram.value());
-                Class typeClass = methodMap.get(pram);
-                String pramName = "pram" + i;
-                String[] requestValues = requestParameterMap.get(pram.value());
-                if (null == requestValues || requestValues.length == 0) {
-                    throw new Exception("参数名不匹配");
+            for (Object pram : keySet) {
+                if(pram instanceof RequestParam) {
+                    RequestParam ano = RequestParam.class.cast(pram);
+                    Class typeClass = methodMap.get(pram);
+                    String[] requestValues = requestParameterMap.get(ano.value());
+                    if (null == requestValues || requestValues.length == 0) {
+                        throw new Exception("参数名不匹配");
+                    }
+                    if (typeClass.equals(Integer.class)) {
+                        arrays[i] = Integer.valueOf(requestValues[0]);
+                    } else {
+                        arrays[i] = typeClass.cast(requestValues[0]);
+                    }
+                }else if(pram instanceof HttpServletRequest) {
+                    arrays[i]=request;
                 }
-                if (typeClass.equals(Integer.class)) {
-                    map.put(pramName, Integer.valueOf(requestValues[0]));
-                } else {
-                    map.put(pramName, typeClass.cast(requestValues[0]));
-                }
-                params += pramName + ",";
                 i++;
             }
-            log.info("--requestCS:" + map);
-            String name = methodBar.getName();
-            String expression = "instance." + name + "(" + params.substring(0, params.length() - 1) + ");";
-            return convertToCode(expression, map);
+            return methodBar.invoke(instance, arrays);
         }
         return null;
     }

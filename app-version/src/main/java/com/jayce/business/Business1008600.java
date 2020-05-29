@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 @Component
@@ -29,7 +30,6 @@ public class Business1008600 {
             book.setAuthor(requestDTO.getAuthor());
             book.setCreateTime(new Date());
             count = bookMapper.insertSelective(book);
-            throw new Exception("error");
         }else{
             //update
             Book bookU = new Book();
@@ -40,20 +40,20 @@ public class Business1008600 {
             count = bookMapper.updateByPrimaryKeySelective(bookU);
             throw new Exception("测试回滚");
         }
-        /*ReturnDTO returnDTO=new ReturnDTO();
+        ReturnDTO returnDTO=new ReturnDTO();
         returnDTO.setCode(200);
         returnDTO.setMessage("success");
         returnDTO.setResult(count);
 
-        return (JSONObject) JSONObject.toJSON(returnDTO);*/
+        return (JSONObject) JSONObject.toJSON(returnDTO);
     }
 
     @ResponseBody
-    public JSONObject trade1000001(@RequestParam("input") String input) {
+    public JSONObject trade1000001(@RequestParam("input") String input, @RequestParam("input2") Integer input2,HttpServletRequest request) {
         ReturnDTO returnDTO = new ReturnDTO();
         returnDTO.setCode(200);
         returnDTO.setMessage("我的版本分离测试trade1000001");
-        returnDTO.setResult(input);
+        returnDTO.setResult(input + input2);
         return (JSONObject) JSONObject.toJSON(returnDTO);
     }
 
